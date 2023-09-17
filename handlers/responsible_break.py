@@ -20,6 +20,7 @@ async def my_requests(callback: types.CallbackQuery):
         else:
             await callback.answer('❌ Ошибка!')
         if requests:
+            requests.reverse()
             for i in requests:
                 branch = Branch.get_by_id(int(i.branch))
                 _user = await bot.get_chat_member(i.responsible, i.responsible) if i.responsible else None
