@@ -227,7 +227,7 @@ def back_inline(callback):
 def request_keyboard(request, role=None, user_id=None, status=None):
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='📸 Просмотр медиа', callback_data=f'show_media_request {request}'))
-    if role == 'responsible' or role == 'admin':
+    if role == 'responsible_break' or role == 'responsible_appeal' or role == 'responsible' or role == 'admin':
         text, callback = '', ''
         if status == 0 or status == 2:
             text, callback = '🔧 В работу', f'req_change_status {request} 1'
@@ -242,7 +242,7 @@ def request_keyboard(request, role=None, user_id=None, status=None):
 def appeal_request_keyboard(request, role=None, user_id=None, status=None):
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='📸 Просмотр медиа', callback_data=f'show_media_appeal_request {request}'))
-    if role == 'responsible' or role == 'admin':
+    if role == 'responsible_break' or role == 'responsible_appeal' or role == 'responsible' or role == 'admin':
         text, callback = '', ''
         if status == 0 or status == 2:
             text, callback = '🔧 В работу', f'req_appeal_change_status {request} 1'

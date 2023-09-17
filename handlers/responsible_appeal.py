@@ -20,8 +20,8 @@ async def my_appeals_requests(callback: types.CallbackQuery):
         else:
             await callback.answer('❌ Ошибка!')
         if requests:
-            requests.reverse()
-            for i in requests:
+
+            for i in requests[::-1]:
 
                 if user.user_role != 'admin' and i.responsible and i.responsible != user.user_id:
                     continue

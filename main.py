@@ -39,6 +39,7 @@ async def on_startup(dp):
 if __name__ == '__main__':
     from handlers.cashier import *
     from handlers.responsible_appeal import *
+    from handlers.responsible_break import *
     from handlers.admin import *
     from handlers.choice_branch import *
     from handlers.choice_category import *
