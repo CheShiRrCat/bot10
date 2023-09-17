@@ -23,10 +23,24 @@ def cashier_keyboard_appeals():
     return kb
 
 
-def responsible_keyboard():
+def adm_resp_keyboard():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='🛠️ Поломки', callback_data=f'show_types_requests'))
     kb.add(types.InlineKeyboardButton(text='🧾 Обращения', callback_data=f'show_types_appeals_requests'))
+    kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
+    return kb
+
+
+def appeal_responsible_keyboard():
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton(text='🧾 Обращения', callback_data=f'show_types_appeals_requests'))
+    kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
+    return kb
+
+
+def break_responsible_keyboard():
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton(text='🛠️ Поломки', callback_data=f'show_types_requests'))
     kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
     return kb
 

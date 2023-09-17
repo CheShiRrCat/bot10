@@ -13,7 +13,7 @@ async def my_requests(callback: types.CallbackQuery):
     user = User.get_or_none(User.user_id == callback.from_user.id)
     if user:
         requests = []
-        if user.user_role == 'responsible' or user.user_role == 'admin':
+        if user.user_role == 'responsible_break' or user.user_role == 'admin':
             requests = Request.select().where(Request.status == int(callback.data.split()[1]))
         elif user.user_role == 'cashier':
             requests = Request.select().where(Request.user_id == callback.from_user.id)
@@ -30,42 +30,6 @@ async def my_requests(callback: types.CallbackQuery):
 👤 Ответственный: {_user['user']['first_name'] if _user else 'Не назначен'}
 {f"💵 Цена: {i.price}" if i.status == 2 else ""}'''
                 await callback.message.answer(text=text, reply_markup=request_keyboard(i, user.user_role,
-                                                                                       i.user_id, i.status))
-            await callback.message.answer('ℹ️ Чтобы вернуться в главное меню, нажмите на кнопку отмены',
-                                          reply_markup=cancel_inline())
-        else:
-            await callback.answer('❌ Выбранный раздел пуст', show_alert=True)
-
-
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_appeals')
-async def my_appeals_requests(callback: types.CallbackQuery):
-    # debug
-    await bot.send_message(205479592, f'Show all appeals')
-    user = User.get_or_none(User.user_id == callback.from_user.id)
-    if user:
-        requests = []
-        if user.user_role == 'responsible' or user.user_role == 'admin':
-            requests = AppealRequest.select().where(AppealRequest.status == int(callback.data.split()[1]))
-        elif user.user_role == 'cashier':
-            requests = AppealRequest.select().where(AppealRequest.user_id == callback.from_user.id)
-        else:
-            await callback.answer('❌ Ошибка!')
-        if requests:
-            for i in requests:
-
-                if user.user_role != 'admin' and i.responsible and i.responsible != user.user_id:
-                    continue
-
-                category = Category.get_by_id(int(i.category))
-                _user = await bot.get_chat_member(i.responsible, i.responsible) if i.responsible else None
-                _user_2 = await bot.get_chat(i.user_id)
-                text = f'''<b>🆔 Заявка номер {i}</b>
-📃 Описание заявки: {i.text}
-🧭 Статус: {get_status(i.status)}
-🧾 Категория: {category.name}
-👤 Ответственный: {_user['user']['first_name'] if _user else 'Не назначен'}
-💡 Заявку оставил: {f'@{_user_2.username}' if _user_2.username else _user_2.first_name}'''
-                await callback.message.answer(text=text, reply_markup=appeal_request_keyboard(i, user.user_role,
                                                                                        i.user_id, i.status))
             await callback.message.answer('ℹ️ Чтобы вернуться в главное меню, нажмите на кнопку отмены',
                                           reply_markup=cancel_inline())
@@ -108,40 +72,6 @@ async def show_media_request(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer('❌ Ошибка', show_alert=True)
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_media_appeal_request')
-async def show_media_appeal_request(callback: types.CallbackQuery, state: FSMContext):
-    # debug
-    await bot.send_message(205479592, f'Show media appeal')
-
-    i = AppealRequest.get_by_id(int(callback.data.split()[1]))
-    user = User.get_or_none(User.user_id == callback.from_user.id)
-    category = Category.get_by_id(int(i.category))
-    if user and i:
-        file_list = listdir(f'images/appeal_{i}')
-        if file_list:
-            _user = await bot.get_chat_member(i.responsible, i.responsible) if i.responsible else None
-            await callback.message.answer('ℹ️ Заявка формируется для отображения . . .')
-            text = f'''<b>🆔 Заявка номер {i}</b>
-📃 Описание заявки: {i.text}
-🧭 Статус: {get_status(i.status)}
-🧾 Категория: {category.name}
-👤 Ответственный: {_user['user']['first_name'] if _user else 'Не назначен'}'''
-            media = types.MediaGroup()
-            for file in file_list:
-                if '.mp4' in file:
-                    media.attach_video(types.InputFile(f'images/appeal_{i}/{file}'), caption=text if file[0] == '0' else '')
-                else:
-                    media.attach_photo(types.InputFile(f'images/appeal_{i}/{file}'), caption=text if file[0] == '0' else '')
-            await bot.send_media_group(callback.from_user.id, media=media)
-            callback_btn = 'show_appeals' if user.user_role == 'cashier' else f'show_appeals {i.status}'
-            await callback.message.answer('↩️ Чтобы вернуться назад, нажмите на кнопку ниже',
-                                          reply_markup=back_inline(callback_btn))
-        else:
-            await callback.message.answer(f'ℹ️ У заявки №{i.id} нету медиа-файлов', reply_markup=cancel_inline())
-    else:
-        await callback.answer('❌ Ошибка', show_alert=True)
-
-
 @dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete')
 async def delete_request(callback: types.CallbackQuery, state: FSMContext):
     request = Request.get_by_id(int(callback.data.split()[1]))
@@ -159,7 +89,7 @@ async def request_change_status(callback: types.CallbackQuery, state: FSMContext
         if int(callback.data.split()[2]) != 2:
             await callback.message.answer('ℹ️ Чтобы перенести заявку в работу, выберите ответственного за эту заявку',
                                           reply_markup=edit_checklists_kb(
-                                              User.select().where(User.user_role == 'responsible'),
+                                              User.select().where(User.user_role == 'responsible_break'),
                                               'set_resp_for_req'))
             await state.update_data(dict(request=request, status=int(callback.data.split()[2])))
         else:
@@ -183,69 +113,6 @@ async def set_responsible_for_request(callback: types.CallbackQuery, state: FSMC
     await to_main(callback.message, state, callback.from_user,
                   _text=f'ℹ️ Вы поменяли статус заявке №{request.id} и назначили {user["user"]["first_name"]}'
                         f' ответственным на {get_status(request.status)}\n')
-
-
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete_appeal')
-async def delete_appeal_request(callback: types.CallbackQuery, state: FSMContext):
-    appeal = AppealRequest.get_by_id(int(callback.data.split()[1]))
-    if appeal:
-        await to_main(callback.message, state, callback.from_user, _text=f'🗑️ Вы удалили заявку №{appeal.id}')
-        appeal.delete_instance()
-    else:
-        await callback.answer('❌ Ошибка! Заявка не найдена')
-
-
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'req_appeal_change_status')
-async def request_appeal_change_status(callback: types.CallbackQuery, state: FSMContext):
-    appeal = AppealRequest.get_by_id(int(callback.data.split()[1]))
-    if appeal:
-        if int(callback.data.split()[2]) != 2:
-            await callback.message.answer('ℹ️ Чтобы перенести заявку в работу, выберите ответственного за эту заявку',
-                                          reply_markup=edit_checklists_kb(
-                                              User.select().where(User.user_role == 'responsible'),
-                                              'set_appeal_resp_for_req'))
-            await state.update_data(dict(request=appeal, status=int(callback.data.split()[2])))
-        else:
-            appeal.status = 2
-            appeal.save()
-            await bot.send_message(appeal.user_id, f'ℹ️ Вашей заявке с №{appeal.id} поменяли статус на '
-                                                    f'{get_status(appeal.status)}')
-            await bot.send_message(appeal.responsible, f'ℹ️ Вы поменяли статус заявке №{appeal.id}'
-                                                    f' на {get_status(appeal.status)}\n')
-            user = User.get_or_none(User.user_id == appeal.responsible)
-            if user.user_role == 'responsible':
-                text = '''<b>📑 Главное меню</b>
-            Для того, чтобы просмотреть новые заявки, нажмите на кнопку "На рассмотрении"'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=responsible_keyboard())
-            elif user.user_role == 'clerk':
-                text = '''<b>📑 Главное меню</b>
-            Для того, чтобы просмотреть свои задачи, нажмите на кнопку "Мои задачи"'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=clerk_keyboard())
-            elif user.user_role == 'resp_clerk':
-                text = '''<b>📑 Главное меню</b>
-            Для того, чтобы просмотреть 🎯 задачи пользователей, нажмите на кнопку "Чек-листы"'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=resp_clerk_kb())
-            elif user.user_role == 'admin':
-                text = '''<b>Административное меню</b>
-            Здесь Вы можете отредактировать 🏬 филиалы, 🧾 категории,  назначить 🔑 роль пользователям или составить 📑 чек-листы'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=admin_keyboard())
-    else:
-        await callback.answer('❌ Ошибка! Заявка не найдена')
-
-
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_appeal_resp_for_req')
-async def set_appeal_responsible_for_request(callback: types.CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    appeal = data['request']
-    appeal.status = data['status']
-    appeal.responsible = int(callback.data.split()[1])
-    appeal.save()
-    user = await bot.get_chat_member(int(callback.data.split()[1]), int(callback.data.split()[1]))
-    await bot.send_message(appeal.user_id, f'ℹ️ Вашей заявке с №{appeal.id} поменяли статус на '
-                                            f'{get_status(appeal.status)}, ей займется {user["user"]["first_name"]}')
-    await to_main(callback.message, state, callback.from_user,
-                  _text=f'ℹ️ Вы поменяли статус заявке №{appeal.id} и назначили {user["user"]["first_name"]}'
-                        f' ответственным на {get_status(appeal.status)}\n')
 
 
 @dp.message_handler(state=Cashier.set_price)

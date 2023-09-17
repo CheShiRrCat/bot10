@@ -36,18 +36,22 @@ async def to_main(message: types.Message, state: FSMContext, _user: types.User, 
         text = '''<b>📑 Главное меню</b>\nИз этого меню Вы можете: перейти к заявкам о поломках и обращениях (создать новую или 
 просмотреть существующие), произвести открытие или закрытие филиала'''
         await message.answer(_text + '\n' + text, reply_markup=cashier_keyboard())
-    elif user.user_role == 'responsible':
+    elif user.user_role == 'responsible_break':
         text = '''<b>📑 Главное меню</b>
 Для того, чтобы просмотреть новые заявки, нажмите на кнопку "На рассмотрении"'''
-        await message.answer(_text + '\n' + text, reply_markup=responsible_keyboard())
-    elif user.user_role == 'clerk':
+        await message.answer(_text + '\n' + text, reply_markup=break_responsible_keyboard())
+    elif user.user_role == 'responsible_appeal':
         text = '''<b>📑 Главное меню</b>
-Для того, чтобы просмотреть свои задачи, нажмите на кнопку "Мои задачи"'''
-        await message.answer(_text + '\n' + text, reply_markup=clerk_keyboard())
-    elif user.user_role == 'resp_clerk':
-        text = '''<b>📑 Главное меню</b>
-Для того, чтобы просмотреть 🎯 задачи пользователей, нажмите на кнопку "Чек-листы"'''
-        await message.answer(_text + '\n' + text, reply_markup=resp_clerk_kb())
+    Для того, чтобы просмотреть новые заявки, нажмите на кнопку "На рассмотрении"'''
+        await message.answer(_text + '\n' + text, reply_markup=appeal_responsible_keyboard())
+#     elif user.user_role == 'clerk':
+#         text = '''<b>📑 Главное меню</b>
+# Для того, чтобы просмотреть свои задачи, нажмите на кнопку "Мои задачи"'''
+#         await message.answer(_text + '\n' + text, reply_markup=clerk_keyboard())
+#     elif user.user_role == 'resp_clerk':
+#         text = '''<b>📑 Главное меню</b>
+# Для того, чтобы просмотреть 🎯 задачи пользователей, нажмите на кнопку "Чек-листы"'''
+#         await message.answer(_text + '\n' + text, reply_markup=resp_clerk_kb())
     elif user.user_role == 'admin':
         text = '''<b>Административное меню</b>
 Здесь Вы можете отредактировать 🏬 филиалы, 🧾 категории, назначить 🔑 роль пользователям или составить 📑 чек-листы'''
@@ -70,12 +74,10 @@ def get_status(status):
 def get_role_name(role):
     if role == 'cashier':
         return 'Линейный персонал'
-    elif role == 'responsible':
-        return 'Ответственный'
-    elif role == 'clerk':
-        return 'Клерк'
-    elif role == 'resp_clerk':
-        return 'Ответственный клерк'
+    elif role == 'responsible_appeal':
+        return 'Ответственный за обращения'
+    elif role == 'responsible_break':
+        return 'Ответственный за поломки'
     elif role == 'admin':
         return 'Администратор'
 
