@@ -13,7 +13,7 @@ async def my_appeals_requests(callback: types.CallbackQuery):
     user = User.get_or_none(User.user_id == callback.from_user.id)
     if user:
         requests = []
-        if user.user_role == 'responsible_appeal' or user.user_role == 'admin':
+        if user.user_role == 'responsible' or user.user_role == 'responsible_appeal' or user.user_role == 'admin':
             requests = AppealRequest.select().where(AppealRequest.status == int(callback.data.split()[1]))
         elif user.user_role == 'cashier':
             requests = AppealRequest.select().where(AppealRequest.user_id == callback.from_user.id)
@@ -93,7 +93,7 @@ async def request_appeal_change_status(callback: types.CallbackQuery, state: FSM
         if int(callback.data.split()[2]) != 2:
             await callback.message.answer('ℹ️ Чтобы перенести заявку в работу, выберите ответственного за эту заявку',
                                           reply_markup=edit_checklists_kb(
-                                              User.select().where(User.user_role == 'responsible_appeal'),
+                                              (User.select().where(User.user_role == 'responsible') + User.select().where(User.user_role == 'responsible_appeal')),
                                               'set_appeal_resp_for_req'))
             await state.update_data(dict(request=appeal, status=int(callback.data.split()[2])))
         else:
@@ -104,22 +104,9 @@ async def request_appeal_change_status(callback: types.CallbackQuery, state: FSM
             await bot.send_message(appeal.responsible, f'ℹ️ Вы поменяли статус заявке №{appeal.id}'
                                                     f' на {get_status(appeal.status)}\n')
             user = User.get_or_none(User.user_id == appeal.responsible)
-            if user.user_role == 'responsible_appeal':
-                text = '''<b>📑 Главное меню</b>
-            Для того, чтобы просмотреть новые заявки, нажмите на кнопку "На рассмотрении"'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=responsible_keyboard())
-            elif user.user_role == 'clerk':
-                text = '''<b>📑 Главное меню</b>
-            Для того, чтобы просмотреть свои задачи, нажмите на кнопку "Мои задачи"'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=clerk_keyboard())
-            elif user.user_role == 'resp_clerk':
-                text = '''<b>📑 Главное меню</b>
-            Для того, чтобы просмотреть 🎯 задачи пользователей, нажмите на кнопку "Чек-листы"'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=resp_clerk_kb())
-            elif user.user_role == 'admin':
-                text = '''<b>Административное меню</b>
-            Здесь Вы можете отредактировать 🏬 филиалы, 🧾 категории,  назначить 🔑 роль пользователям или составить 📑 чек-листы'''
-                await bot.send_message(user.user_id, text + '\n' + text, reply_markup=admin_keyboard())
+            await to_main(callback.message, state, callback.from_user,
+                          _text=f'ℹ️ Вы поменяли статус заявке №{appeal.id} и назначили {user["user"]["first_name"]}'
+                                f' ответственным на {get_status(appeal.status)}\n')
     else:
         await callback.answer('❌ Ошибка! Заявка не найдена')
 

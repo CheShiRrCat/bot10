@@ -92,7 +92,7 @@ async def find_user(message: types.Message, state: FSMContext):
 async def edit_roles(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     user = User.get_by_id(data['user_to_edit'])
-    if user and callback.data.split()[0] in ['cashier', 'responsible_break', 'responsible_appeal', 'admin']:
+    if user and callback.data.split()[0] in ['cashier', 'responsible_break', 'responsible_appeal', 'responsible', 'admin']:
         user.user_role = callback.data.split()[0]
         user.save()
         await bot.send_message(user.user_id, f'🔑 Вам изменили права доступа\nЧтобы обновить меню, введите /start')
@@ -281,7 +281,7 @@ async def edit_categories(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer(f'👤 Выберите ответственного по умолчанию для категории <b>"{category.name}"</b>\n'
                                       f'Ответственный на данный момент: <b>"{responsible}"</b>',
                                           reply_markup=edit_checklists_kb(
-                                              User.select().where(User.user_role == 'responsible_appeal'),
+                                              (User.select().where(User.user_role == 'responsible') + User.select().where(User.user_role == 'responsible_appeal')),
                                               'set_resp_for_cat'))
     else:
         await callback.message.answer('❌ Ошибка! Не выбрана категория!')
@@ -331,7 +331,7 @@ async def add_category(message: types.Message, state: FSMContext):
                f'Теперь необходимо назначить ответственного за данную категорию'
         data['category'] = category
         await message.answer(text, reply_markup=edit_checklists_kb(
-                                              User.select().where(User.user_role == 'responsible_appeal'),
+            (User.select().where(User.user_role == 'responsible') + User.select().where(User.user_role == 'responsible_appeal')),
                                               f'set_resp_for_new_cat {category}'))
 
 

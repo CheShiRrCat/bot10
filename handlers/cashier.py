@@ -74,6 +74,7 @@ async def handle_albums(message: types.Message, state: FSMContext, album: List[t
 🧭 Посмотреть статус данной заявки Вы можете в разделе "Мои заявки"''')
     users = User.select().where(User.user_role == 'responsible_appeal')
     users += User.select().where(User.user_role == 'responsible_break')
+    users += User.select().where(User.user_role == 'responsible')
     users += User.select().where(User.user_role == 'admin')
     for i in users:
         branch = Branch.get_by_id(int(data['branch']))
@@ -132,6 +133,7 @@ async def handle_albums_category(message: types.Message, state: FSMContext, albu
 🧭 Посмотреть статус данного обращения Вы можете в разделе "Мои обращения"''')
     users = User.select().where(User.user_role == 'responsible_appeal')
     users += User.select().where(User.user_role == 'responsible_break')
+    users += User.select().where(User.user_role == 'responsible')
     users += User.select().where(User.user_role == 'admin')
     for i in users:
         category = Category.get_by_id(int(data['category']))

@@ -15,8 +15,6 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 @dp.message_handler(commands=['start'], state='*')
 async def start(message: types.Message, state: FSMContext):
     from handlers.functions import to_main
-    # debug
-    await bot.send_message(205479592, f'User with id "{message.from_user}" start bot')
     await to_main(message, state, message.from_user)
 
 

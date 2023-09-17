@@ -44,6 +44,10 @@ async def to_main(message: types.Message, state: FSMContext, _user: types.User, 
         text = '''<b>📑 Главное меню</b>
     Для того, чтобы просмотреть новые заявки, нажмите на кнопку "На рассмотрении"'''
         await message.answer(_text + '\n' + text, reply_markup=appeal_responsible_keyboard())
+    elif user.user_role == 'responsible':
+        text = '''<b>📑 Главное меню</b>
+        Для того, чтобы просмотреть новые заявки, нажмите на кнопку "На рассмотрении"'''
+        await message.answer(_text + '\n' + text, reply_markup=adm_resp_keyboard())
 #     elif user.user_role == 'clerk':
 #         text = '''<b>📑 Главное меню</b>
 # Для того, чтобы просмотреть свои задачи, нажмите на кнопку "Мои задачи"'''
@@ -78,6 +82,8 @@ def get_role_name(role):
         return 'Ответственный за обращения'
     elif role == 'responsible_break':
         return 'Ответственный за поломки'
+    elif role == 'responsible':
+        return 'Универсальный ответственный'
     elif role == 'admin':
         return 'Администратор'
 

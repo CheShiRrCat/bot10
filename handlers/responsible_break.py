@@ -13,7 +13,7 @@ async def my_requests(callback: types.CallbackQuery):
     user = User.get_or_none(User.user_id == callback.from_user.id)
     if user:
         requests = []
-        if user.user_role == 'responsible_break' or user.user_role == 'admin':
+        if user.user_role == 'responsible' or user.user_role == 'responsible_break' or user.user_role == 'admin':
             requests = Request.select().where(Request.status == int(callback.data.split()[1]))
         elif user.user_role == 'cashier':
             requests = Request.select().where(Request.user_id == callback.from_user.id)
@@ -89,7 +89,7 @@ async def request_change_status(callback: types.CallbackQuery, state: FSMContext
         if int(callback.data.split()[2]) != 2:
             await callback.message.answer('ℹ️ Чтобы перенести заявку в работу, выберите ответственного за эту заявку',
                                           reply_markup=edit_checklists_kb(
-                                              User.select().where(User.user_role == 'responsible_break'),
+                                              (User.select().where(User.user_role == 'responsible') + User.select().where(User.user_role == 'responsible_break')),
                                               'set_resp_for_req'))
             await state.update_data(dict(request=request, status=int(callback.data.split()[2])))
         else:
