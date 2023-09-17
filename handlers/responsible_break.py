@@ -1,3 +1,5 @@
+import loguru
+
 from main import bot, dp
 from main import bot, dp
 from aiogram.dispatcher import FSMContext
