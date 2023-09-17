@@ -1,7 +1,7 @@
-from main import bot, dp
-from handlers.functions import to_main, get_role_name, get_status
-from aiogram import types
 from aiogram.dispatcher import FSMContext
+
+from handlers.functions import to_main, get_role_name, get_status
+from main import bot, dp
 from utilities import *
 
 
@@ -67,8 +67,8 @@ async def edit_roles(callback: types.CallbackQuery, state: FSMContext):
     if user and user.user_role == 'admin':
         await state.set_state(Admin.edit_user)
         await callback.message.answer('👤 Введите логин пользователя, которому хотите назначить права'
-                                                  '\nℹ️ Символ @ использовать не требуется',
-                                                  reply_markup=cancel_inline())
+                                      '\nℹ️ Символ @ использовать не требуется',
+                                      reply_markup=cancel_inline())
 
 
 @dp.message_handler(state=Admin.edit_user)
@@ -76,8 +76,8 @@ async def find_user(message: types.Message, state: FSMContext):
     user = User.get_or_none(User.username == message.text)
     if user:
         await message.answer(f'👤 Выберите роль для пользователя {user.username}\n'
-                                         f'🔑 Сейчас его роль - {get_role_name(user.user_role)}',
-                                         reply_markup=edit_roles_kb())
+                             f'🔑 Сейчас его роль - {get_role_name(user.user_role)}',
+                             reply_markup=edit_roles_kb())
         await state.update_data(dict(user_to_edit=user))
     else:
         await message.answer('''❌ Данный пользователь в системе не найден
@@ -92,7 +92,8 @@ async def find_user(message: types.Message, state: FSMContext):
 async def edit_roles(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     user = User.get_by_id(data['user_to_edit'])
-    if user and callback.data.split()[0] in ['cashier', 'responsible_break', 'responsible_appeal', 'responsible', 'admin']:
+    if user and callback.data.split()[0] in ['cashier', 'responsible_break', 'responsible_appeal', 'responsible',
+                                             'admin']:
         user.user_role = callback.data.split()[0]
         user.save()
         await bot.send_message(user.user_id, f'🔑 Вам изменили права доступа\nЧтобы обновить меню, введите /start')
@@ -123,13 +124,13 @@ async def edit_checklists(callback: types.CallbackQuery, state: FSMContext):
 Для того, чтобы ➕ добавить новую задачу пользователю - нажмите "Добавить"
 Для ↩️ возвращения в предыдущее меню - нажмите "Назад"'''
             await callback.message.answer(text,
-                                                          reply_markup=add_task_and_back('edit_checklists'))
+                                          reply_markup=add_task_and_back('edit_checklists'))
             await state.update_data(dict(selected_clerk=clerk.user_id))
         else:
             await to_main(callback.message, state, callback.from_user, '❌ Ошибка, пользователь не найден')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'add_task') # add and edit task
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'add_task')  # add and edit task
 async def add_task_to_clerk(callback: types.CallbackQuery, state: FSMContext):
     do = 'добавить'
     if len(callback.data.split()) == 2:
@@ -248,7 +249,8 @@ async def edit_categories(callback: types.CallbackQuery):
         category = Category.select()
         text = f'''Выберите 🧾 категорию для редактирования или удаления
 Чтобы ➕ добавить новую 🧾 категорию, нажмите "Добавить"'''
-        await callback.message.answer(text, reply_markup=categories_keyboard(category, 'choice_category', user.user_role))
+        await callback.message.answer(text,
+                                      reply_markup=categories_keyboard(category, 'choice_category', user.user_role))
     else:
         await callback.answer('❌ Ошибка!', show_alert=True)
 
@@ -257,8 +259,9 @@ async def edit_categories(callback: types.CallbackQuery):
 async def edit_categories(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if 'category' in data:
-        await callback.message.answer('Вы можете поменять имя, или назначить ответственного по умолчанию для текущей категории',
-                                      reply_markup=category_edit_type())
+        await callback.message.answer(
+            'Вы можете поменять имя, или назначить ответственного по умолчанию для текущей категории',
+            reply_markup=category_edit_type())
     else:
         text = f'''🧾 Введите название новой категории'''
         await state.set_state(Admin.edit_category)
@@ -280,9 +283,10 @@ async def edit_categories(callback: types.CallbackQuery, state: FSMContext):
                 responsible = f'@{i.username}'
         await callback.message.answer(f'👤 Выберите ответственного по умолчанию для категории <b>"{category.name}"</b>\n'
                                       f'Ответственный на данный момент: <b>"{responsible}"</b>',
-                                          reply_markup=edit_checklists_kb(
-                                              (User.select().where(User.user_role == 'responsible') + User.select().where(User.user_role == 'responsible_appeal')),
-                                              'set_resp_for_cat'))
+                                      reply_markup=edit_checklists_kb(
+                                          (User.select().where(User.user_role == 'responsible') + User.select().where(
+                                              User.user_role == 'responsible_appeal')),
+                                          'set_resp_for_cat'))
     else:
         await callback.message.answer('❌ Ошибка! Не выбрана категория!')
 
@@ -295,7 +299,8 @@ async def set_responsible_for_category(callback: types.CallbackQuery, state: FSM
         category.responsible = int(callback.data.split()[1])
         category.save()
         user = await bot.get_chat_member(int(callback.data.split()[1]), int(callback.data.split()[1]))
-        await bot.send_message(category.responsible, f'ℹ️ Вас назначили ответственным за категорию <b>"{category.name}"</b>')
+        await bot.send_message(category.responsible,
+                               f'ℹ️ Вас назначили ответственным за категорию <b>"{category.name}"</b>')
         await to_main(callback.message, state, callback.from_user,
                       _text=f'ℹ️ Вы назначили категории <b>{category.name}</b> нового ответственного: <b>"{user["user"]["first_name"]}"</b>')
 
@@ -331,8 +336,9 @@ async def add_category(message: types.Message, state: FSMContext):
                f'Теперь необходимо назначить ответственного за данную категорию'
         data['category'] = category
         await message.answer(text, reply_markup=edit_checklists_kb(
-            (User.select().where(User.user_role == 'responsible') + User.select().where(User.user_role == 'responsible_appeal')),
-                                              f'set_resp_for_new_cat {category}'))
+            (User.select().where(User.user_role == 'responsible') + User.select().where(
+                User.user_role == 'responsible_appeal')),
+            f'set_resp_for_new_cat {category}'))
 
 
 @dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_resp_for_new_cat')

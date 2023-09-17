@@ -2,6 +2,8 @@ import datetime
 
 from main import bot
 from aiogram.dispatcher import FSMContext
+
+from states.casheer import CasheerStates
 from utilities import *
 
 
@@ -35,6 +37,7 @@ async def to_main(message: types.Message, state: FSMContext, _user: types.User, 
     if user.user_role == 'cashier':
         text = '''<b>📑 Главное меню</b>\nИз этого меню Вы можете: перейти к заявкам о поломках и обращениях (создать новую или 
 просмотреть существующие), произвести открытие или закрытие филиала'''
+        await CasheerStates.MAIN_MENU.set()
         await message.answer(_text + '\n' + text, reply_markup=cashier_keyboard())
     elif user.user_role == 'responsible_break':
         text = '''<b>📑 Главное меню</b>

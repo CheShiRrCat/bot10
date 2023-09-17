@@ -13,6 +13,7 @@ def cashier_keyboard_repairs():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='🛠️ Оставить заявку', callback_data=f'create_request'))
     kb.add(types.InlineKeyboardButton(text='📋 Мои заявки', callback_data=f'show_requests'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
@@ -20,6 +21,7 @@ def cashier_keyboard_appeals():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='🧾 Оставить обращение', callback_data=f'create_appeal'))
     kb.add(types.InlineKeyboardButton(text='📋 Мои обращения', callback_data=f'show_appeals'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
@@ -159,10 +161,12 @@ def edit_task_kb(task_id):
 
 def branches_keyboard(branches, callback, user_role='cashier'):
     kb = types.InlineKeyboardMarkup()
+    print(callback)
     for i in branches:
         kb.add(types.InlineKeyboardButton(text=i.name, callback_data=f'{callback} {i.id}'))
     if user_role == 'admin' and callback == 'choice_branch':
         kb.add(types.InlineKeyboardButton(text='➕ Добавить', callback_data='edit_branch'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 
@@ -214,6 +218,7 @@ def edit_checklist_kb(checklist_id):
 
 def cancel_inline():
     kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 
@@ -257,6 +262,7 @@ def appeal_request_keyboard(request, role=None, user_id=None, status=None):
 def next_step():
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     kb.add('Пропустить')
+    kb.add('⬅️ Назад')
     return kb
 
 
