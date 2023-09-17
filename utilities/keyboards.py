@@ -27,7 +27,7 @@ def responsible_keyboard():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='🛠️ Поломки', callback_data=f'show_types_requests'))
     kb.add(types.InlineKeyboardButton(text='🧾 Обращения', callback_data=f'show_types_appeals_requests'))
-    kb.add(types.InlineKeyboardButton(text='📋 Чек-листы кассиров', callback_data=f'show_checklists'))
+    kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
     return kb
 
 
@@ -110,7 +110,7 @@ def category_edit_type():
 
 def edit_roles_kb():
     kb = types.InlineKeyboardMarkup()
-    kb.add(types.InlineKeyboardButton(text='Кассир', callback_data='cashier'))
+    kb.add(types.InlineKeyboardButton(text='Линейный персонал', callback_data='cashier'))
     kb.add(types.InlineKeyboardButton(text='Ответственный', callback_data='responsible'))
     kb.add(types.InlineKeyboardButton(text='Клерк', callback_data='clerk'))
     kb.add(types.InlineKeyboardButton(text='Ответственный клерк', callback_data='resp_clerk'))

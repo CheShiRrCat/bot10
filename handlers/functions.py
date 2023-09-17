@@ -69,7 +69,7 @@ def get_status(status):
 
 def get_role_name(role):
     if role == 'cashier':
-        return 'Кассир'
+        return 'Линейный персонал'
     elif role == 'responsible':
         return 'Ответственный'
     elif role == 'clerk':
