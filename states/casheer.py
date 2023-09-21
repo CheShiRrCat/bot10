@@ -3,7 +3,10 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 class CasheerStates(StatesGroup):
     MAIN_MENU = State()
-
+    TASK_PHOTO = State()
+    SET_PRICE = State()
+    SELECT_BRANCH = State()
+    SELECT_OPEN_CLOSE = State()
 
 class CasheerRepStates(StatesGroup):
     REP_MENU = State()

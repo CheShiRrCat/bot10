@@ -1,6 +1,7 @@
 from main import dp
 from aiogram import types
 
+from states.admin import Admin
 from states.casheer import CasheerRepStates
 from utilities import *
 from aiogram.dispatcher import FSMContext
@@ -15,6 +16,7 @@ async def create_request(callback: types.CallbackQuery, state: FSMContext):
                                       reply_markup=cancel_inline())
         # await state.set_state(Cashier.enter_text)
     elif user.user_role == 'admin':
+        await Admin.edit_branch.set()
         branch = Branch.get_by_id(int(callback.data.split()[1]))
         text = f'''{branch.name}
 Для изменения названия 🏬 филиала нажмите "Изменить"

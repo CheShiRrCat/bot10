@@ -4,20 +4,24 @@ from main import bot, dp
 from main import bot, dp
 from aiogram.dispatcher import FSMContext
 from handlers.functions import to_main, get_status
+from states.casheer import CasheerStates, CasheerRepStates
+from states.responsable import RespStates
 from utilities import *
 from os import listdir
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_requests')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_requests', state="*")
 async def my_requests(callback: types.CallbackQuery):
     # debug
-    await bot.send_message(205479592, f'Show all requests')
+    await bot.send_message(366790707, f'Show all requests')
     user = User.get_or_none(User.user_id == callback.from_user.id)
     if user:
         requests = []
         if user.user_role == 'responsible' or user.user_role == 'responsible_break' or user.user_role == 'admin':
             requests = Request.select().where(Request.status == int(callback.data.split()[1]))
+            await RespStates.REP_EDIT.set()
         elif user.user_role == 'cashier':
+            await CasheerRepStates.MY_REQUESTS.set()
             requests = Request.select().where(Request.user_id == callback.from_user.id)
         else:
             await callback.answer('❌ Ошибка!')
@@ -40,14 +44,15 @@ async def my_requests(callback: types.CallbackQuery):
             await callback.answer('❌ Выбранный раздел пуст', show_alert=True)
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_media_request')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_media_request', state="*")
 async def show_media_request(callback: types.CallbackQuery, state: FSMContext):
     # debug
-    await bot.send_message(205479592, f'Show media request')
+    await bot.send_message(366790707, f'Show media request')
 
     i = Request.get_by_id(int(callback.data.split()[1]))
     user = User.get_or_none(User.user_id == callback.from_user.id)
     branch = Branch.get_by_id(int(i.branch))
+
     if user and i:
         file_list = listdir(f'images/{i}')
         if file_list:
@@ -67,6 +72,8 @@ async def show_media_request(callback: types.CallbackQuery, state: FSMContext):
                     media.attach_photo(types.InputFile(f'images/{i}/{file}'), caption=text if file[0] == '0' else '')
             await bot.send_media_group(callback.from_user.id, media=media)
             callback_btn = 'show_requests' if user.user_role == 'cashier' else f'show_requests {i.status}'
+            if user.user_role == 'cashier':
+                CasheerRepStates.MY_REQUESTS.set()
             await callback.message.answer('↩️ Чтобы вернуться назад, нажмите на кнопку ниже',
                                           reply_markup=back_inline(callback_btn))
         else:
@@ -75,7 +82,7 @@ async def show_media_request(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer('❌ Ошибка', show_alert=True)
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete', state="*")
 async def delete_request(callback: types.CallbackQuery, state: FSMContext):
     request = Request.get_by_id(int(callback.data.split()[1]))
     if request:
@@ -85,25 +92,27 @@ async def delete_request(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer('❌ Ошибка! Заявка не найдена')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'req_change_status')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'req_change_status', state="*")
 async def request_change_status(callback: types.CallbackQuery, state: FSMContext):
     request = Request.get_by_id(int(callback.data.split()[1]))
     if request:
         if int(callback.data.split()[2]) != 2:
             await callback.message.answer('ℹ️ Чтобы перенести заявку в работу, выберите ответственного за эту заявку',
                                           reply_markup=edit_checklists_kb(
-                                              (User.select().where(User.user_role == 'responsible') + User.select().where(User.user_role == 'responsible_break')),
+                                              (User.select().where(
+                                                  User.user_role == 'responsible') + User.select().where(
+                                                  User.user_role == 'responsible_break')),
                                               'set_resp_for_req'))
             await state.update_data(dict(request=request, status=int(callback.data.split()[2])))
         else:
             await callback.message.answer('Введите цену, за которую Вы выполнили заявку')
             await state.update_data(dict(req_id=int(callback.data.split()[1])))
-            await state.set_state(Cashier.set_price)
+            await CasheerStates.SET_PRICE.set()
     else:
         await callback.answer('❌ Ошибка! Заявка не найдена')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_resp_for_req')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_resp_for_req', state="*")
 async def set_responsible_for_request(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     request = data['request']
@@ -118,7 +127,7 @@ async def set_responsible_for_request(callback: types.CallbackQuery, state: FSMC
                         f' ответственным на {get_status(request.status)}\n')
 
 
-@dp.message_handler(state=Cashier.set_price)
+@dp.message_handler(state=CasheerStates.SET_PRICE)
 async def set_price_req(message: types.Message, state: FSMContext):
     if message.text.isdigit():
         data = await state.get_data()
@@ -134,34 +143,42 @@ async def set_price_req(message: types.Message, state: FSMContext):
         await bot.send_message(message.from_user.id, 'Ошибка! Введите цену выполненной заявки')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_types_requests')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_types_requests', state="*")
 async def show_types_requests(callback: types.CallbackQuery):
     text = '''<b>🛠️ Поломки</b>
 Здесь вы можете посмотреть: 
 Новые заявки <b>"⌛ На рассмотрении"</b>
 Заявки в работе <b>"🔧 В работе"</b>
 Историю заявок <b>✅ Завершенные</b>'''
+    await RespStates.REP_MENU.set()
     await callback.message.answer(text, reply_markup=responsible_requests_keyboard())
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_types_appeals_requests')
+@dp.callback_query_handler(lambda callback: callback.data == 'back',
+                           state=RespStates.REP_EDIT)
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await show_types_requests(callback)
+
+
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_types_appeals_requests', state="*")
 async def show_types_appeals_requests(callback: types.CallbackQuery):
     text = '''<b>🧾 Обращения</b>
 Здесь вы можете посмотреть: 
 Новые заявки <b>"⌛ На рассмотрении"</b>
 Заявки в работе <b>"🔧 В работе"</b>
 Историю заявок <b>✅ Завершенные</b>'''
+    await RespStates.REQ_MENU.set()
     await callback.message.answer(text, reply_markup=responsible_appeal_requests_keyboard())
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_checklists')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'show_checklists', state="*")
 async def show_checklists(callback: types.CallbackQuery):
     branches = Branch.select()
     await callback.message.answer('Выберите филиал, в котором хотите просмотреть чек-листы',
                                   reply_markup=branches_keyboard(branches, 'resp_choice_branch'))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'resp_choice_branch')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'resp_choice_branch', state="*")
 async def resp_choice_branch(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(dict(resp_choice_branch=int(callback.data.split()[1])))
     tasks = BranchesTasks.select()
@@ -174,14 +191,14 @@ async def resp_choice_branch(callback: types.CallbackQuery, state: FSMContext):
                                   reply_markup=resp_checklists_kb(dates, 'resp_choice_date'))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'resp_choice_date')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'resp_choice_date', state="*")
 async def resp_choice_date(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(dict(resp_choice_date=callback.data.split()[1]))
     await callback.message.answer('Выберите действие, которое хотите просмотреть. Открытие / Закрытие',
                                   reply_markup=open_close_kb('resp_choice_do'))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'resp_choice_do')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'resp_choice_do', state="*")
 async def resp_choice_do(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     is_close = True if callback.data.split()[1] == 'True' else False

@@ -30,6 +30,7 @@ def adm_resp_keyboard():
     kb.add(types.InlineKeyboardButton(text='🛠️ Поломки', callback_data=f'show_types_requests'))
     kb.add(types.InlineKeyboardButton(text='🧾 Обращения', callback_data=f'show_types_appeals_requests'))
     kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
@@ -52,6 +53,7 @@ def responsible_requests_keyboard():
     kb.add(types.InlineKeyboardButton(text='⏳ На рассмотрении', callback_data=f'show_requests 0'))
     kb.add(types.InlineKeyboardButton(text='🔧 В работе', callback_data=f'show_requests 1'))
     kb.add(types.InlineKeyboardButton(text='✅ Завершенные', callback_data=f'show_requests 2'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
@@ -60,6 +62,7 @@ def responsible_appeal_requests_keyboard():
     kb.add(types.InlineKeyboardButton(text='⏳ На рассмотрении', callback_data=f'show_appeals 0'))
     kb.add(types.InlineKeyboardButton(text='🔧 В работе', callback_data=f'show_appeals 1'))
     kb.add(types.InlineKeyboardButton(text='✅ Завершенные', callback_data=f'show_appeals 2'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
@@ -104,6 +107,7 @@ def branch_edit():
            types.InlineKeyboardButton(text='🗑️ Удалить', callback_data=f'delete_branch'))
     kb.row(types.InlineKeyboardButton(text='Открытие', callback_data='checklist_branch 0'),
            types.InlineKeyboardButton(text='Закрытие', callback_data='checklist_branch 1'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 
@@ -112,6 +116,7 @@ def category_edit():
     kb = types.InlineKeyboardMarkup()
     kb.row(types.InlineKeyboardButton(text='✏️ Изменить', callback_data=f'edit_category'),
            types.InlineKeyboardButton(text='🗑️ Удалить', callback_data=f'delete_category'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 
@@ -120,6 +125,7 @@ def category_edit_type():
     kb = types.InlineKeyboardMarkup()
     kb.row(types.InlineKeyboardButton(text='✏️ Изменить имя', callback_data=f'change_category_name'),
            types.InlineKeyboardButton(text='👤 Изменить ответственного', callback_data=f'change_category_responsible'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 
@@ -133,6 +139,7 @@ def edit_roles_kb():
     # kb.add(types.InlineKeyboardButton(text='Клерк', callback_data='clerk'))
     # kb.add(types.InlineKeyboardButton(text='Ответственный клерк', callback_data='resp_clerk'))
     kb.add(types.InlineKeyboardButton(text='Администратор', callback_data='admin'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 
@@ -156,6 +163,7 @@ def edit_task_kb(task_id):
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='✏️ Изменить', callback_data=f'add_task {task_id}'))
     kb.add(types.InlineKeyboardButton(text='🗑️ Удалить', callback_data=f'delete_task {task_id}'))
+
     return kb
 
 
@@ -177,6 +185,7 @@ def categories_keyboard(categories, callback, user_role='cashier'):
         kb.add(types.InlineKeyboardButton(text=i.name, callback_data=f'{callback} {i.id}'))
     if user_role == 'admin' and callback == 'choice_category':
         kb.add(types.InlineKeyboardButton(text='➕ Добавить', callback_data='edit_category'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 
@@ -185,6 +194,7 @@ def open_close_kb(callback):
     kb = types.InlineKeyboardMarkup()
     kb.row(types.InlineKeyboardButton(text='Открытие', callback_data=f'{callback} False'),
            types.InlineKeyboardButton(text='Закрытие', callback_data=f'{callback} True'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     kb.add(types.InlineKeyboardButton(text='❌ Отмена', callback_data='cancel'))
     return kb
 

@@ -1,5 +1,6 @@
 import datetime
 import types
+from datetime import datetime
 
 from main import dp, bot
 from handlers.functions import to_main, get_status
@@ -11,7 +12,22 @@ from typing import List
 import os
 
 
+@dp.callback_query_handler(text="back", state=[CasheerReqStates.MY_REQUESTS, CasheerReqStates.SELECT_THEME])
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await appeal_request(callback)
+
+
+@dp.callback_query_handler(text="back", state=CasheerReqStates.WRITE)
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await create_appeal_request(callback)
+
+
 @dp.callback_query_handler(lambda callback: callback.data == 'cancel', state=['*'])
+async def cancel(callback: types.CallbackQuery, state: FSMContext):
+    await to_main(callback.message, state, callback.from_user, 'ℹ️ Вы вернулись в главное меню\n')
+
+
+@dp.callback_query_handler(lambda callback: callback.data == 'back', state=[CasheerStates.SELECT_BRANCH])
 async def cancel(callback: types.CallbackQuery, state: FSMContext):
     await to_main(callback.message, state, callback.from_user, 'ℹ️ Вы вернулись в главное меню\n')
 
@@ -25,6 +41,11 @@ async def create_request(callback: types.CallbackQuery):
                                   reply_markup=branches_keyboard(branches, 'choice_branch'))
 
 
+@dp.callback_query_handler(text="back", state=CasheerRepStates.MY_REQUESTS)
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await repair_request(callback)
+
+
 @dp.callback_query_handler(text="back", state=CasheerRepStates.WRITE)
 async def back(callback: types.CallbackQuery, state: FSMContext):
     await create_request(callback)
@@ -35,10 +56,10 @@ async def back(callback: types.CallbackQuery, state: FSMContext):
     await repair_request(callback)
 
 
-@dp.message_handler(state=Cashier.enter_text_category)
+@dp.message_handler(state=CasheerReqStates.WRITE)
 async def enter_text_category(message: types.Message, state: FSMContext):
     await message.answer(f'📸 Отлично! Теперь прикрепите медиа, если это необходимо', reply_markup=next_step())
-    await state.set_state(Cashier.enter_attach_category)
+    await CasheerReqStates.PHOTO.set()
     await state.update_data(dict(req_text=message.text))
 
 
@@ -51,12 +72,20 @@ async def enter_text(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=CasheerRepStates.PHOTO, content_types=types.ContentType.ANY)
 async def handle_albums(message: types.Message, state: FSMContext, album: List[types.Message] = None):
+    if message.text == '⬅️ Назад':
+        branches = Branch.select()
+        await CasheerRepStates.SELECT_BRANCH.set()
+        await message.answer('🏬 Выберите филиал среди предложенных ниже',
+                             reply_markup=branches_keyboard(branches, 'choice_branch'))
+        return
+
     await message.answer('ℹ️ Заявка в процессе создания . . .')
     data = await state.get_data()
     request = Request.create(user_id=message.from_user.id,
                              text=data['req_text'],
                              branch=data['branch'],
-                             status=0)
+                             status=0,
+                             last_update=datetime.now())
     os.mkdir(f'images/{request.id}')
     image_urls = []
     if album:
@@ -104,14 +133,22 @@ async def handle_albums(message: types.Message, state: FSMContext, album: List[t
     # await notify_users('admin', '📢 Внимание! Новая заявка')
 
 
-@dp.message_handler(state=Cashier.enter_attach_category, content_types=types.ContentType.ANY)
+@dp.message_handler(state=CasheerReqStates.PHOTO, content_types=types.ContentType.ANY)
 async def handle_albums_category(message: types.Message, state: FSMContext, album: List[types.Message] = None):
+    if message.text == "⬅️ Назад":
+        categories = Category.select()
+        await CasheerReqStates.SELECT_THEME.set()
+        await message.answer('Выберите тему обращения',
+                             reply_markup=categories_keyboard(categories, 'choice_category'))
+
+        return
     await message.answer('ℹ️ Заявка в процессе создания . . .')
     data = await state.get_data()
     a_request = AppealRequest.create(user_id=message.from_user.id,
                                      text=data['req_text'],
                                      category=data['category'],
-                                     status=0)
+                                     status=0,
+                                     last_update=datetime.now())
     os.mkdir(f'images/appeal_{a_request.id}')
     image_urls = []
     print('work 1')
@@ -178,7 +215,7 @@ async def handle_albums_category(message: types.Message, state: FSMContext, albu
     # await notify_users('admin', '📢 Внимание! Новая заявка')
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'repair_request', state=CasheerStates.MAIN_MENU)
+@dp.callback_query_handler(lambda callback: callback.data == 'repair_request', state="*")
 async def repair_request(callback: types.CallbackQuery):
     text = '''В данном разделе, Вы можете отправить заявку о какой-либо 🛠️ технической неполадке
 Для этого нажмите на <b>"Оставить заявку"</b>,
@@ -192,7 +229,7 @@ async def back(callback: types.CallbackQuery, state: FSMContext):
     await to_main(callback.message, state, callback.from_user, 'ℹ️ Вы вернулись в главное меню\n')
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'appeal_request', state=CasheerStates.MAIN_MENU)
+@dp.callback_query_handler(lambda callback: callback.data == 'appeal_request', state="*")
 async def appeal_request(callback: types.CallbackQuery):
     text = '''В данном разделе, Вы можете отправить свой вопрос в одной из приведённых категорий
 Для этого нажмите на <b>"Оставить обращение"</b>,
@@ -201,28 +238,35 @@ async def appeal_request(callback: types.CallbackQuery):
     await callback.message.answer(text, reply_markup=cashier_keyboard_appeals())
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'open_close')
+@dp.callback_query_handler(lambda callback: callback.data == 'open_close', state="*")
 async def open_close(callback: types.CallbackQuery):
     # debug
     try:
-        await bot.send_message(205479592, f'open')
+        await bot.send_message(366790707, f'open')
     except:
         users = User.select().where(User.user_id != 1)
         for user in users:
             user.delete()
     branches = Branch.select()
+    await CasheerStates.SELECT_BRANCH.set()
     await callback.message.answer('Выберите свой филиал, в котором собираетесь открыть или закрыть смену',
                                   reply_markup=branches_keyboard(branches, 'open_close_branch'))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'open_close_branch')
+@dp.callback_query_handler(text="back", state=CasheerStates.SELECT_OPEN_CLOSE)
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await open_close(callback)
+
+
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'open_close_branch', state="*")
 async def open_close_branch(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(dict(branch_open_close=int(callback.data.split()[1])))
+    await CasheerStates.SELECT_OPEN_CLOSE.set()
     await callback.message.answer('Выберите действие, которое хотите выполнить. Открытие / Закрытие',
                                   reply_markup=open_close_kb('branch_task_do'))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'branch_task_do')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'branch_task_do', state="*")
 async def branch_task_do(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     is_close = True if callback.data.split()[1] == 'True' else False
@@ -235,7 +279,7 @@ async def branch_task_do(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(dict(is_close=is_close))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'edit_task_photo')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'edit_task_photo', state="*")
 async def edit_task_photo(callback: types.CallbackQuery, state: FSMContext):
     task = BranchesTasks.get_by_id(int(callback.data.split()[1]))
     print(f'task: {task}')
@@ -248,7 +292,7 @@ async def edit_task_photo(callback: types.CallbackQuery, state: FSMContext):
                     'Отправьте фотографию для подтверждения выполнения задания, как на примере')
             else:
                 await callback.message.answer('Отправьте фотографию для подтверждения выполнения задания')
-            await state.set_state(Cashier.edit_task_photo)
+            await CasheerStates.TASK_PHOTO.set()
         else:
             data = await state.get_data()
             task.status = 1
@@ -264,7 +308,7 @@ async def edit_task_photo(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer('Вы уже выполнили задание!')
 
 
-@dp.message_handler(state=Cashier.edit_task_photo, content_types=types.ContentType.ANY)
+@dp.message_handler(state=CasheerStates.TASK_PHOTO, content_types=types.ContentType.ANY)
 async def editing_task_photo(message: types.Message, state: FSMContext):
     if message.photo:
         data = await state.get_data()
@@ -282,8 +326,9 @@ async def editing_task_photo(message: types.Message, state: FSMContext):
         await message.answer('Отправьте фотографию для подтверждения выполнения задания')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'create_appeal')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'create_appeal', state="*")
 async def create_appeal_request(callback: types.CallbackQuery):
     categories = Category.select()
+    await CasheerReqStates.SELECT_THEME.set()
     await callback.message.answer('Выберите тему обращения',
                                   reply_markup=categories_keyboard(categories, 'choice_category'))

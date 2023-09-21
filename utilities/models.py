@@ -19,6 +19,7 @@ class Request(Model):
     branch = TextField()
     price = IntegerField()
     responsible = IntegerField()
+    last_update = DateTimeField()
 
     class Meta:
         database = db
@@ -31,6 +32,7 @@ class AppealRequest(Model):
     status = IntegerField()
     category = TextField()
     responsible = IntegerField()
+    last_update = DateTimeField()
 
     class Meta:
         database = db

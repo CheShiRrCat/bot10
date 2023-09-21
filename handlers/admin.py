@@ -2,18 +2,45 @@ from aiogram.dispatcher import FSMContext
 
 from handlers.functions import to_main, get_role_name, get_status
 from main import bot, dp
+from states.admin import Admin
 from utilities import *
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'adm_requests')
+@dp.callback_query_handler(text="back", state=Admin.edit_branch)
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await edit_branches(callback)
+
+
+#
+
+
+@dp.callback_query_handler(lambda callback: callback.data == 'back',
+                           state=[Admin.edit_user, Admin.cats, Admin.branches, Admin.requests])
+async def cancel(callback: types.CallbackQuery, state: FSMContext):
+    await to_main(callback.message, state, callback.from_user, 'ℹ️ Вы вернулись в главное меню\n')
+
+
+@dp.callback_query_handler(text="back", state=[Admin.rep_menu, Admin.req_menu])
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await adm_requests(callback)
+
+
+@dp.callback_query_handler(text="back", state=Admin.cat_decide)
+async def back(callback: types.CallbackQuery, state: FSMContext):
+    await cats_list(callback)
+
+
+@dp.callback_query_handler(lambda callback: callback.data == 'adm_requests', state="*")
 async def adm_requests(callback: types.CallbackQuery):
+    await Admin.requests.set()
     text = '''
 Здесь вы можете просмотреть заявки в работе, историю и новые заявки в разделах <b>"Поломки"</b> и <b>"Обращения"</b>'''
     await callback.message.answer(text, reply_markup=adm_resp_keyboard())
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'edit_branches')
+@dp.callback_query_handler(lambda callback: callback.data == 'edit_branches', state="*")
 async def edit_branches(callback: types.CallbackQuery):
+    await Admin.branches.set()
     user = User.get_or_none(User.user_id == callback.from_user.id)
     if user and user.user_role == 'admin':
         branches = Branch.select()
@@ -24,18 +51,18 @@ async def edit_branches(callback: types.CallbackQuery):
         await callback.answer('❌ Ошибка!', show_alert=True)
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'edit_branch')
-async def edit_branches(callback: types.CallbackQuery, state: FSMContext):
+@dp.callback_query_handler(lambda callback: callback.data == 'edit_branch', state="*")
+async def edit_branch_name(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if 'branch' in data:
         text = f'''🏬 Введите новое название филиала'''
     else:
         text = f'''🏬 Введите название нового филиала'''
-    await state.set_state(Admin.edit_branch)
+    await state.set_state(Admin.edit_branch_name)
     await callback.message.answer(text)
 
 
-@dp.message_handler(state=Admin.edit_branch)
+@dp.message_handler(state=Admin.edit_branch_name)
 async def add_branch(message: types.Message, state: FSMContext):
     data, text = await state.get_data(), ''
     if 'branch' in data:
@@ -49,7 +76,7 @@ async def add_branch(message: types.Message, state: FSMContext):
     await to_main(message, state, message.from_user, text)
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'delete_branch')
+@dp.callback_query_handler(lambda callback: callback.data == 'delete_branch', state="*")
 async def edit_branch(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if 'branch' in data:
@@ -61,7 +88,7 @@ async def edit_branch(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer('❌ Ошибка! Вы не выбрали филиал', show_alert=True)
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'edit_roles')
+@dp.callback_query_handler(lambda callback: callback.data == 'edit_roles', state="*")
 async def edit_roles(callback: types.CallbackQuery, state: FSMContext):
     user = User.get_or_none(User.user_id == callback.from_user.id)
     if user and user.user_role == 'admin':
@@ -103,7 +130,7 @@ async def edit_roles(callback: types.CallbackQuery, state: FSMContext):
         await callback.answer('❌ Ошибка', show_alert=True)
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'edit_checklists')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'edit_checklists', state="*")
 async def edit_checklists(callback: types.CallbackQuery, state: FSMContext):
     if callback.data == 'edit_checklists':
         text = '👤 Выберите пользователя из списка\nℹ️ Если список пуст - нет пользователей с правами клерка'
@@ -130,7 +157,7 @@ async def edit_checklists(callback: types.CallbackQuery, state: FSMContext):
             await to_main(callback.message, state, callback.from_user, '❌ Ошибка, пользователь не найден')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'add_task')  # add and edit task
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'add_task', state="*")  # add and edit task
 async def add_task_to_clerk(callback: types.CallbackQuery, state: FSMContext):
     do = 'добавить'
     if len(callback.data.split()) == 2:
@@ -157,7 +184,7 @@ async def edit_task_for_clerk(message: types.Message, state: FSMContext):
     await to_main(message, state, message.from_user, text if text else 'Ошибка')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete_task')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete_task', state="*")
 async def delete_task(callback: types.CallbackQuery, state: FSMContext):
     task = Task.get_by_id(int(callback.data.split()[1]))
     await bot.send_message(task.user_id, '📑 Ваш список задач был обновлен')
@@ -165,7 +192,7 @@ async def delete_task(callback: types.CallbackQuery, state: FSMContext):
     await to_main(callback.message, state, callback.from_user, '🗑️ Вы успешно удалили задачу')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'checklist_branch')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'checklist_branch', state="*")
 async def checklist_branch(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     checklists = ChecklistTemplates.select().where(ChecklistTemplates.is_close == int(callback.data.split()[1])). \
@@ -175,7 +202,7 @@ async def checklist_branch(callback: types.CallbackQuery, state: FSMContext):
                                   reply_markup=checklists_branch_kb(checklists, callback.data.split()[1]))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'add_checklist')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'add_checklist', state="*")
 async def add_checklist(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer('Введите название нового задания для выбранного чек-листа')
     await state.update_data(dict(is_close=int(callback.data.split()[1])))
@@ -189,7 +216,7 @@ async def adding_checklist(message: types.Message, state: FSMContext):
     await to_main(message, state, message.from_user, f'Вы успешно добавили задание {message.text}')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'choice_checklist')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'choice_checklist', state="*")
 async def choice_checklist(callback: types.CallbackQuery, state: FSMContext):
     checklist = ChecklistTemplates.get_by_id(int(callback.data.split()[1]))
     if checklist.photo:
@@ -199,7 +226,7 @@ async def choice_checklist(callback: types.CallbackQuery, state: FSMContext):
                                   reply_markup=edit_checklist_kb(checklist.id))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'change_checklist')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'change_checklist', state="*")
 async def add_checklist(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer('Введите новое название выбранного задания из чек-листа')
     await state.update_data(dict(checklist_id=int(callback.data.split()[1])))
@@ -216,14 +243,14 @@ async def change_checklist(message: types.Message, state: FSMContext):
     checklist.save()
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete_checklist')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'delete_checklist', state="*")
 async def delete_checklist(callback: types.CallbackQuery, state: FSMContext):
     checklist = ChecklistTemplates.get_by_id(int(callback.data.split()[1]))
     await to_main(callback.message, state, callback.from_user, f'Вы удалили задание {checklist.name}')
     checklist.delete_instance()
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'photo_checklist')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'photo_checklist', state="*")
 async def photo_checklist(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer('Отправьте фотографию для выбранного чек-листа', reply_markup=delete_kb())
     await state.update_data(dict(checklist_id=int(callback.data.split()[1])))
@@ -242,8 +269,9 @@ async def change_photo(message: types.Message, state: FSMContext):
         await message.answer('Отправьте фотографию для выбранного чек-листа', reply_markup=delete_kb())
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'edit_categories')
-async def edit_categories(callback: types.CallbackQuery):
+@dp.callback_query_handler(lambda callback: callback.data == 'edit_categories', state="*")
+async def cats_list(callback: types.CallbackQuery):
+    await Admin.cats.set()
     user = User.get_or_none(User.user_id == callback.from_user.id)
     if user and user.user_role == 'admin':
         category = Category.select()
@@ -255,22 +283,28 @@ async def edit_categories(callback: types.CallbackQuery):
         await callback.answer('❌ Ошибка!', show_alert=True)
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'edit_category')
-async def edit_categories(callback: types.CallbackQuery, state: FSMContext):
+
+
+
+@dp.callback_query_handler(text='edit_category', state="*")
+async def edit_category(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
+    print(f"cat_edit, {data=}, {callback.data=}")
+    await Admin.cat_edit.set()
     if 'category' in data:
         await callback.message.answer(
             'Вы можете поменять имя, или назначить ответственного по умолчанию для текущей категории',
             reply_markup=category_edit_type())
     else:
         text = f'''🧾 Введите название новой категории'''
-        await state.set_state(Admin.edit_category)
+        await Admin.edit_category_name.set()
         await callback.message.answer(text)
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'change_category_responsible')
+@dp.callback_query_handler(lambda callback: callback.data == 'change_category_responsible', state="*")
 async def edit_categories(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
+
     if 'category' in data:
         category = Category.get_by_id(int(data['category']))
         responsible_id = category.responsible
@@ -291,9 +325,10 @@ async def edit_categories(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.answer('❌ Ошибка! Не выбрана категория!')
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_resp_for_cat')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_resp_for_cat', state="*")
 async def set_responsible_for_category(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
+
     if 'category' in data:
         category = Category.get_by_id(int(data['category']))
         category.responsible = int(callback.data.split()[1])
@@ -309,18 +344,18 @@ async def set_responsible_for_category(callback: types.CallbackQuery, state: FSM
 
 
 # category_edit_type
-@dp.callback_query_handler(lambda callback: callback.data == 'change_category_name')
+@dp.callback_query_handler(lambda callback: callback.data == 'change_category_name', state="*")
 async def edit_categories(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if 'category' in data:
         text = f'''🧾 Введите новое название категории'''
     else:
         text = f'''🧾 Введите название новой категории'''
-    await state.set_state(Admin.edit_category)
+    await Admin.edit_category_name.set()
     await callback.message.answer(text)
 
 
-@dp.message_handler(state=Admin.edit_category)
+@dp.message_handler(state=Admin.edit_category_name)
 async def add_category(message: types.Message, state: FSMContext):
     data, text = await state.get_data(), ''
     if 'category' in data:
@@ -341,7 +376,7 @@ async def add_category(message: types.Message, state: FSMContext):
             f'set_resp_for_new_cat {category}'))
 
 
-@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_resp_for_new_cat')
+@dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'set_resp_for_new_cat', state="*")
 async def set_resp_for_new_cat(callback: types.CallbackQuery, state: FSMContext):
     print(callback.data.split())
     category = Category.get_by_id(callback.data.split()[1])
@@ -354,7 +389,7 @@ async def set_resp_for_new_cat(callback: types.CallbackQuery, state: FSMContext)
                   _text=f'ℹ️ Вы назначили категории <b>{category.name}</b> нового ответственного: <b>"{user["user"]["first_name"]}"</b>')
 
 
-@dp.callback_query_handler(lambda callback: callback.data == 'delete_category')
+@dp.callback_query_handler(lambda callback: callback.data == 'delete_category', state="*")
 async def delete_category(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     if 'category' in data:
