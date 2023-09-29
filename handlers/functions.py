@@ -50,7 +50,7 @@ async def to_main(message: types.Message, state: FSMContext, _user: types.User, 
     elif user.user_role == 'responsible':
         text = '''<b>📑 Главное меню</b>
         Для того, чтобы просмотреть новые заявки, нажмите на кнопку "На рассмотрении"'''
-        await message.answer(_text + '\n' + text, reply_markup=adm_resp_keyboard())
+        await message.answer(_text + '\n' + text, reply_markup=resp_keyboard())
 #     elif user.user_role == 'clerk':
 #         text = '''<b>📑 Главное меню</b>
 # Для того, чтобы просмотреть свои задачи, нажмите на кнопку "Мои задачи"'''

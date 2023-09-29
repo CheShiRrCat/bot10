@@ -133,26 +133,26 @@ async def edit_roles(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query_handler(lambda callback: callback.data.split()[0] == 'edit_checklists', state="*")
 async def edit_checklists(callback: types.CallbackQuery, state: FSMContext):
     if callback.data == 'edit_checklists':
-        text = '👤 Выберите пользователя из списка\nℹ️ Если список пуст - нет пользователей с правами клерка'
-        clerks = User.select().where(User.user_role == 'clerk')
-        await callback.message.answer(text, reply_markup=edit_checklists_kb(clerks, 'edit_checklists'))
+        text = '👤 Выберите пользователя из списка\nℹ️ Если список пуст - нет пользователей с правами ответсвенного-универсала'
+        responsiblies = User.select().where(User.user_role == 'responsible')
+        await callback.message.answer(text, reply_markup=edit_checklists_kb(responsiblies, 'edit_checklists'))
     elif callback.data.split()[1].isdigit():
-        clerk = User.get_or_none(User.user_id == int(callback.data.split()[1]))
-        if clerk:
-            tasks = Task.select().where(Task.user_id == clerk.user_id)
+        responsible = User.get_or_none(User.user_id == int(callback.data.split()[1]))
+        if responsible:
+            tasks = Task.select().where(Task.user_id == responsible.user_id)
             for i in tasks:
                 task_text = f'''🎯 Задача: {i.text}
 🧭 Статус: {get_status(i.status)}
 {f"Время выполнения: 📅 {i.date.day}-{i.date.month}-{i.date.year}: 🕒 {i.date.hour}-{i.date.minute}"
                 if i.status == 2 else ""}'''
                 await callback.message.answer(task_text, reply_markup=edit_task_kb(i.id))
-            text = f'''Вы выбрали пользователя 👤 {clerk.username}
+            text = f'''Вы выбрали пользователя 👤 {responsible.username}
 Выше Вы можете просмотреть его 🎯 задачи (если они есть)
 Для того, чтобы ➕ добавить новую задачу пользователю - нажмите "Добавить"
 Для ↩️ возвращения в предыдущее меню - нажмите "Назад"'''
             await callback.message.answer(text,
                                           reply_markup=add_task_and_back('edit_checklists'))
-            await state.update_data(dict(selected_clerk=clerk.user_id))
+            await state.update_data(dict(selected_clerk=responsible.user_id))
         else:
             await to_main(callback.message, state, callback.from_user, '❌ Ошибка, пользователь не найден')
 

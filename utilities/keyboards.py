@@ -29,8 +29,15 @@ def adm_resp_keyboard():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='🛠️ Поломки', callback_data=f'show_types_requests'))
     kb.add(types.InlineKeyboardButton(text='🧾 Обращения', callback_data=f'show_types_appeals_requests'))
+    return kb
+
+
+def resp_keyboard():
+    kb = types.InlineKeyboardMarkup()
+    kb.add(types.InlineKeyboardButton(text='🛠️ Поломки', callback_data=f'show_types_requests'))
+    kb.add(types.InlineKeyboardButton(text='🧾 Обращения', callback_data=f'show_types_appeals_requests'))
+    kb.add(types.InlineKeyboardButton(text='🎯 Мои задачи', callback_data=f'my_tasks'))
     kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
-    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
@@ -38,6 +45,7 @@ def appeal_responsible_keyboard():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='🧾 Обращения', callback_data=f'show_types_appeals_requests'))
     kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
@@ -45,6 +53,7 @@ def break_responsible_keyboard():
     kb = types.InlineKeyboardMarkup()
     kb.add(types.InlineKeyboardButton(text='🛠️ Поломки', callback_data=f'show_types_requests'))
     kb.add(types.InlineKeyboardButton(text='📋 Чек-листы линейного персонала', callback_data=f'show_checklists'))
+    kb.add(types.InlineKeyboardButton(text='⬅️ Назад', callback_data=f'back'))
     return kb
 
 
